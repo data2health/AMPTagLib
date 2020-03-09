@@ -18,12 +18,13 @@ public class Generator {
     protected static Connection conn = null;
     protected static LocalProperties props = null;
     
+    static String sourceSchema = null;
     static Hashtable<String, Integer> idHash = new Hashtable<String, Integer>();
 
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
 	PropertyConfigurator.configure("log4j.info");
 	conn = getConnection();
-	
+
 	departments();
     }
     
@@ -159,35 +160,35 @@ public class Generator {
 	    int questionID = rs.getInt(1);
 	    //int questionPageID = rs.getInt(2);
 	    int questionOrder = rs.getInt(3);
-	    String questionText = rs.getString(4);
+	    String questionText = rs.getString(4).replace("\n ", "");
 	    String type = rs.getString(5);
 	    logger.info("\t\t\tquestion: " + questionID + " - " + questionOrder + " - " + questionText + " - " + type);
 	    switch(type) {
 	    case "YES_NO_DROPDOWN":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		break;
 	    case "SHORT_TEXT_INPUT":
 	    case "LONG_TEXT_INPUT":
 	    case "HUGE_TEXT_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText, "", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		break;
 	    case "INTEGER_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		break;
 	    case "CURRENCY_INPUT":
 	    case "DECIMAL_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		break;
 	    case "DATE_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		break;
 	    case "SINGLE_CHOICE_DROP_DOWN":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText, "", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		break;
 	    case "MULTIPLE_CHOICE_CHECKBOXES":
@@ -199,21 +200,21 @@ public class Generator {
 		    String optionText = subrs.getString(2);
 		    String optionValue = subrs.getString(3);
 		    logger.info("\t\t\t\tcheckbox option: " + optionOrder + " - " + optionText + " - " + optionValue);
-		    attributes.append(", p" + pageOrder + "q" + questionOrder + "o" + optionOrder + " as " + identifier(questionText+" "+optionText));
+		    attributes.append(", p" + pageOrder + "q" + questionOrder + "o" + optionOrder + " as " + identifier(questionText, " "+optionText, ""));
 		    triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "o" + optionOrder);
 		}
 		subStmt.close();
 		break;
 	    //case "SINGLE_CHOICE_DROP_DOWN": // DataSet Drop Down appears like this in the database
 	    case "SINGLE_CHOICE_RADIO_BUTTONS":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText));
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "text::text as " + identifier(questionText+" text"));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText, "", ""));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "text::text as " + identifier(questionText, " text", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "text");
 		break;
 	    case "STAR_RATING":
 	    case "SMILEY_FACES_RATING":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText));
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
 		break;
 	    case "YES_NO_DROPDOWN_MATRIX":
@@ -235,7 +236,7 @@ public class Generator {
 			    int columnOrder = subsubrs.getInt(1);
 			    String columnLabel = subsubrs.getString(2);
 			    logger.info("\t\t\t\t\tmatrix column label: " + columnOrder + " - " + columnLabel);
-			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + " as " + identifier(questionText+" "+rowLabel+" "+columnLabel));
+			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + " as " + identifier(questionText, rowLabel, columnLabel));
 			    triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder);
 			}
 			subSubStmt.close();
@@ -257,7 +258,7 @@ public class Generator {
 			    int columnOrder = subsubrs.getInt(1);
 			    String columnLabel = subsubrs.getString(2);
 			    logger.info("\t\t\t\t\tmatrix column label: " + columnOrder + " - " + columnLabel);
-			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + "::text as " + identifier(questionText+" "+rowLabel+" "+columnLabel));
+			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + "::text as " + identifier(questionText, rowLabel, columnLabel));
 			    triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder);
 			}
 			subSubStmt.close();
@@ -279,8 +280,9 @@ public class Generator {
     }
     
     static void materializeView(String viewName, String sourceTable, String attributes, String triggerAttributes) {
+	logger.info("attributes: " + attributes);
 	simpleStmt("drop materialized view if exists amp." + viewName + " cascade");
-	simpleStmt("create materialized view amp." + viewName + " as select " + attributes + " from amp_survey." + sourceTable);
+	simpleStmt("create materialized view amp." + viewName + " as select " + attributes + " from " + sourceSchema + "." + sourceTable);
 	
 	simpleStmt("DROP FUNCTION IF EXISTS refresh_" + sourceTable + " CASCADE;");
 	simpleStmt("CREATE FUNCTION refresh_" + sourceTable + "() RETURNS TRIGGER AS $body$"
@@ -290,21 +292,46 @@ public class Generator {
 		   +" END;"
 		   +" $body$ LANGUAGE plpgsql ;");
 
-	simpleStmt("DROP TRIGGER IF EXISTS refresh_" + sourceTable + " ON amp_survey." + sourceTable + " CASCADE;");
+	simpleStmt("DROP TRIGGER IF EXISTS refresh_" + sourceTable + " ON " + sourceSchema + "." + sourceTable + " CASCADE;");
 	simpleStmt("CREATE TRIGGER refresh_" + sourceTable
 		   +" AFTER"
 		   +"    INSERT"
 		   +" OR UPDATE OF " + triggerAttributes
 		   +" OR DELETE"
 		   +" OR TRUNCATE"
-		   +" ON amp_survey." + sourceTable
+		   +" ON " + sourceSchema + "." + sourceTable
 		   +" EXECUTE PROCEDURE refresh_" + sourceTable + "();");
     }
     
-    static String identifier(String source) {
+    static String identifier(String schemaName, String rowLabel, String columnName) {
+	int identifierMaxLength = 60; // actual limit is 63, but we need to account for potential "count" suffixes
+	String source = null;
+
+	logger.debug("schemaName: " + schemaName.length() + " : " + schemaName);
+	logger.debug("rowLabel  : " + rowLabel.length() + " : " + rowLabel);
+	logger.debug("columnName: " + columnName.length() + " : " + columnName);
+	
+	// first deal with long attribute names
+	if (schemaName.length() + rowLabel.length() + columnName.length() + 2 > identifierMaxLength) {
+	    if (columnName.length() == 0)
+		// split constraint across the schema and row labels
+		source = (schemaName.length() < 30 ? schemaName : schemaName.substring(0, 30))
+			+ "_" + (rowLabel.length() < 30 ? rowLabel : rowLabel.substring(0, 30));
+	    else
+		// give half to the schema label and split the remainder between the row and column labels
+		source = (schemaName.length() < 30 ? schemaName : schemaName.substring(0, 30))
+			+ "_" + (rowLabel.length() < 15 ? rowLabel : rowLabel.substring(0, 15))
+	    		+ "_" + (columnName.length() < 15 ? columnName : columnName.substring(0, 15));
+	} else
+	    source = schemaName + (rowLabel.length() == 0 ? "" : "_" + rowLabel) + (columnName.length() == 0 ? "" : "_" + columnName);
+	
+	// map invalid characters
 	String candidate = source.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
+	
+	// map invalid first characters
 	if (!Character.isAlphabetic(candidate.charAt(0)))
 	    candidate = "x" + candidate;
+	
 	if (idHash.containsKey(candidate)) {
 	    int count = idHash.get(candidate) + 1;
 	    idHash.put(candidate, count);
@@ -317,6 +344,8 @@ public class Generator {
 
     public static Connection getConnection() throws SQLException, ClassNotFoundException {
 	props = PropertyLoader.loadProperties("cd2h");
+	sourceSchema = props.getProperty("jdbc.schema");
+	logger.info("schema: " + sourceSchema);
 	Class.forName("org.postgresql.Driver");
     	Properties pprops = new Properties();
     	pprops.setProperty("user", props.getProperty("jdbc.user"));
