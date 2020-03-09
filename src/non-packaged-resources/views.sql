@@ -8,7 +8,7 @@ CREATE MATERIALIZED VIEW amp.department AS
     name::text AS name,
     description::text AS description,
     version
-FROM amp_survey.department;
+FROM demo_survey.department;
 
 DROP FUNCTION IF EXISTS refresh_department CASCADE;
 CREATE FUNCTION refresh_department() RETURNS TRIGGER AS $body$
@@ -18,14 +18,14 @@ CREATE FUNCTION refresh_department() RETURNS TRIGGER AS $body$
     END;
 $body$ LANGUAGE plpgsql ;
 
-DROP TRIGGER IF EXISTS refresh_department ON amp_survey.department CASCADE;
+DROP TRIGGER IF EXISTS refresh_department ON demo_survey.department CASCADE;
 CREATE TRIGGER refresh_department
 AFTER
     INSERT
  OR UPDATE OF id,name,description,version
  OR DELETE
  OR TRUNCATE
-ON amp_survey.department
+ON demo_survey.department
 EXECUTE PROCEDURE refresh_department();
 
 DROP MATERIALIZED VIEW IF EXISTS amp.survey CASCADE;
@@ -37,7 +37,7 @@ SELECT
     is_public,
     status::text AS status,
     department_id
-FROM amp_survey.survey_definition;
+FROM demo_survey.survey_definition;
 
 DROP FUNCTION IF EXISTS refresh_survey CASCADE;
 CREATE FUNCTION refresh_survey() RETURNS TRIGGER AS $body$
@@ -47,14 +47,14 @@ CREATE FUNCTION refresh_survey() RETURNS TRIGGER AS $body$
     END;
 $body$ LANGUAGE plpgsql ;
 
-DROP TRIGGER IF EXISTS refresh_survey ON amp_survey.survey_definition CASCADE;
+DROP TRIGGER IF EXISTS refresh_survey ON demo_survey.survey_definition CASCADE;
 CREATE TRIGGER refresh_survey
 AFTER
     INSERT
  OR UPDATE OF id,name,description,is_public,status,department_id
  OR DELETE
  OR TRUNCATE
-ON amp_survey.survey_definition
+ON demo_survey.survey_definition
 EXECUTE PROCEDURE refresh_survey();
 
 DROP MATERIALIZED VIEW IF EXISTS amp.survey_page CASCADE;
@@ -65,7 +65,7 @@ SELECT
     page_order,
     title::text AS title,
     instructions::text AS instructions
-FROM amp_survey.survey_definition_page;
+FROM demo_survey.survey_definition_page;
 
 DROP FUNCTION IF EXISTS refresh_survey_page CASCADE;
 CREATE FUNCTION refresh_survey_page() RETURNS TRIGGER AS $body$
@@ -75,14 +75,14 @@ CREATE FUNCTION refresh_survey_page() RETURNS TRIGGER AS $body$
     END;
 $body$ LANGUAGE plpgsql ;
 
-DROP TRIGGER IF EXISTS refresh_survey_page ON amp_survey.survey_definition_page CASCADE;
+DROP TRIGGER IF EXISTS refresh_survey_page ON demo_survey.survey_definition_page CASCADE;
 CREATE TRIGGER refresh_survey_page
 AFTER
     INSERT
  OR UPDATE OF id,survey_definition_id,page_order,title,instructions
  OR DELETE
  OR TRUNCATE
-ON amp_survey.survey_definition_page
+ON demo_survey.survey_definition_page
 EXECUTE PROCEDURE refresh_survey_page();
 
 DROP MATERIALIZED VIEW IF EXISTS amp.question CASCADE;
@@ -93,7 +93,7 @@ SELECT
     question_order,
     substring(question_text, '<p>(.*)</p>') AS question_text,
     type::text as type
-FROM amp_survey.question;
+FROM demo_survey.question;
 
 DROP FUNCTION IF EXISTS refresh_question CASCADE;
 CREATE FUNCTION refresh_question() RETURNS TRIGGER AS $body$
@@ -103,14 +103,14 @@ CREATE FUNCTION refresh_question() RETURNS TRIGGER AS $body$
     END;
 $body$ LANGUAGE plpgsql ;
 
-DROP TRIGGER IF EXISTS refresh_question ON amp_survey.question CASCADE;
+DROP TRIGGER IF EXISTS refresh_question ON demo_survey.question CASCADE;
 CREATE TRIGGER refresh_question
 AFTER
     INSERT
  OR UPDATE OF id,survey_definition_page_id,question_order,question_text,type
  OR DELETE
  OR TRUNCATE
-ON amp_survey.question
+ON demo_survey.question
 EXECUTE PROCEDURE refresh_question();
 
 DROP MATERIALIZED VIEW IF EXISTS amp.question_option CASCADE;
@@ -121,7 +121,7 @@ SELECT
     option_order,
     option_text::text as option_text,
     option_value::text as option_value
-FROM amp_survey.question_option;
+FROM demo_survey.question_option;
 
 DROP FUNCTION IF EXISTS refresh_question_option CASCADE;
 CREATE FUNCTION refresh_question_option() RETURNS TRIGGER AS $body$
@@ -131,14 +131,14 @@ CREATE FUNCTION refresh_question_option() RETURNS TRIGGER AS $body$
     END;
 $body$ LANGUAGE plpgsql ;
 
-DROP TRIGGER IF EXISTS refresh_question_option ON amp_survey.question_option CASCADE;
+DROP TRIGGER IF EXISTS refresh_question_option ON demo_survey.question_option CASCADE;
 CREATE TRIGGER refresh_question_option
 AFTER
     INSERT
  OR UPDATE OF id,question_id,option_order,option_text,option_value
  OR DELETE
  OR TRUNCATE
-ON amp_survey.question_option
+ON demo_survey.question_option
 EXECUTE PROCEDURE refresh_question_option();
 
 DROP MATERIALIZED VIEW IF EXISTS amp.question_row_label CASCADE;
@@ -148,7 +148,7 @@ SELECT
     question_id,
     row_label_order,
     label::text as label
-FROM amp_survey.question_row_label;
+FROM demo_survey.question_row_label;
 
 DROP FUNCTION IF EXISTS refresh_question_row_label CASCADE;
 CREATE FUNCTION refresh_question_row_label() RETURNS TRIGGER AS $body$
@@ -158,14 +158,14 @@ CREATE FUNCTION refresh_question_row_label() RETURNS TRIGGER AS $body$
     END;
 $body$ LANGUAGE plpgsql ;
 
-DROP TRIGGER IF EXISTS refresh_question_row_label ON amp_survey.question_row_label CASCADE;
+DROP TRIGGER IF EXISTS refresh_question_row_label ON demo_survey.question_row_label CASCADE;
 CREATE TRIGGER refresh_question_row_label
 AFTER
     INSERT
  OR UPDATE OF id,question_id,row_label_order,label
  OR DELETE
  OR TRUNCATE
-ON amp_survey.question_row_label
+ON demo_survey.question_row_label
 EXECUTE PROCEDURE refresh_question_row_label();
 
 DROP MATERIALIZED VIEW IF EXISTS amp.question_column_label CASCADE;
@@ -175,7 +175,7 @@ SELECT
     question_id,
     column_label_order,
     label::text as label
-FROM amp_survey.question_column_label;
+FROM demo_survey.question_column_label;
 
 DROP FUNCTION IF EXISTS refresh_question_column_label CASCADE;
 CREATE FUNCTION refresh_question_column_label() RETURNS TRIGGER AS $body$
@@ -185,12 +185,12 @@ CREATE FUNCTION refresh_question_column_label() RETURNS TRIGGER AS $body$
     END;
 $body$ LANGUAGE plpgsql ;
 
-DROP TRIGGER IF EXISTS refresh_question_column_label ON amp_survey.question_column_label CASCADE;
+DROP TRIGGER IF EXISTS refresh_question_column_label ON demo_survey.question_column_label CASCADE;
 CREATE TRIGGER refresh_question_column_label
 AFTER
     INSERT
  OR UPDATE OF id,question_id,column_label_order,label
  OR DELETE
  OR TRUNCATE
-ON amp_survey.question_column_label
+ON demo_survey.question_column_label
 EXECUTE PROCEDURE refresh_question_column_label();
