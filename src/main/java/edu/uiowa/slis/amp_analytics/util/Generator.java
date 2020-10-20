@@ -23,25 +23,13 @@ public class Generator {
 
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
 	PropertyConfigurator.configure("log4j.info");
+	props = PropertyLoader.loadProperties("cd2h");
 	conn = getConnection();
 
 	departments();
     }
     
     static void departments() throws SQLException {
-	PreparedStatement comment = conn.prepareStatement("comment on materialized view amp.department is 'An AMP \"department\"'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.department.department_id is 'The unique identifier for an AMP department'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.department.name is 'The name of an AMP department'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.department.description is 'The description of an AMP department'");
-	comment.executeUpdate();
-	comment.close();
-	
 	PreparedStatement stmt = conn.prepareStatement("select department_id,name,description from amp.department");
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -55,28 +43,6 @@ public class Generator {
     }
 
     static void surveys(int departmentID) throws SQLException {
-	PreparedStatement comment = conn.prepareStatement("comment on materialized view amp.survey is 'An AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey.survey_id is 'The unique identifier for an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey.name is 'The name of an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey.description is 'The description of an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey.is_public	 is 'A flag indicating public access to the survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey.status is 'The status of an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey.department_id is 'The unique id of an AMP department to which this survey belongs'");
-	comment.executeUpdate();
-	comment.close();
-	
 	PreparedStatement stmt = conn.prepareStatement("select survey_id,name,description,is_public,status,department_id from amp.survey where department_id = ?");
 	stmt.setInt(1, departmentID);
 	ResultSet rs = stmt.executeQuery();
@@ -94,25 +60,6 @@ public class Generator {
     }
 
     static void survey_pages(int surveyID) throws SQLException {
-	PreparedStatement comment = conn.prepareStatement("comment on materialized view amp.survey_page is 'A survey page for an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey_page.page_id is 'The unique identifier for a page in an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey_page.survey_id is 'The unique identifier for an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey_page.page_order is 'The presentation order of a page in an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey_page.title is 'The label of a question an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.survey_page.instructions is 'The instructions for responding to a question in an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	
 	StringBuffer attributes = new StringBuffer("survey_id");
 	StringBuffer triggerAttributes = new StringBuffer("survey_id");
 	PreparedStatement stmt = conn.prepareStatement("select page_id,survey_id,page_order,title,instructions from amp.survey_page where survey_id = ? order by page_order");
@@ -134,25 +81,6 @@ public class Generator {
     }
 
     static void questions(int surveyID, int pageID, int pageOrder, StringBuffer attributes, StringBuffer triggerAttributes) throws SQLException {
-	PreparedStatement comment = conn.prepareStatement("comment on materialized view amp.question is 'A question on an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.question.question_id is 'The unique identifier for a question in an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.question.page_id is 'The unique identifier for the page on which a question appeears in an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.question.question_order is 'The presentation order of a question on a page in an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.question.question_text is 'The presented description of a question an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	comment = conn.prepareStatement("comment on column amp.question.type is 'The type of a question in an AMP survey'");
-	comment.executeUpdate();
-	comment.close();
-	
 	PreparedStatement stmt = conn.prepareStatement("select question_id,page_id,question_order,question_text,type from amp.question where page_id = ? order by question_order");
 	stmt.setInt(1, pageID);
 	ResultSet rs = stmt.executeQuery();
@@ -343,7 +271,6 @@ public class Generator {
     }
 
     public static Connection getConnection() throws SQLException, ClassNotFoundException {
-	props = PropertyLoader.loadProperties("cd2h");
 	sourceSchema = props.getProperty("jdbc.schema");
 	logger.info("schema: " + sourceSchema);
 	Class.forName("org.postgresql.Driver");

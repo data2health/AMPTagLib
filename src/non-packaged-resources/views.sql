@@ -10,6 +10,11 @@ CREATE MATERIALIZED VIEW amp.department AS
     version
 FROM demo_survey.department;
 
+comment on materialized view amp.department is 'An AMP "department"';
+comment on column amp.department.department_id is 'The unique identifier for an AMP department';
+comment on column amp.department.name is 'The name of an AMP department';
+comment on column amp.department.description is 'The description of an AMP department';
+
 DROP FUNCTION IF EXISTS refresh_department CASCADE;
 CREATE FUNCTION refresh_department() RETURNS TRIGGER AS $body$
     BEGIN
@@ -39,6 +44,14 @@ SELECT
     department_id
 FROM demo_survey.survey_definition;
 
+comment on materialized view amp.survey is 'An AMP survey';
+comment on column amp.survey.survey_id is 'The unique identifier for an AMP survey';
+comment on column amp.survey.name is 'The name of an AMP survey';
+comment on column amp.survey.description is 'The description of an AMP survey';
+comment on column amp.survey.is_public   is 'A flag indicating public access to the survey';
+comment on column amp.survey.status is 'The status of an AMP survey';
+comment on column amp.survey.department_id is 'The unique id of an AMP department to which this survey belongs';
+
 DROP FUNCTION IF EXISTS refresh_survey CASCADE;
 CREATE FUNCTION refresh_survey() RETURNS TRIGGER AS $body$
     BEGIN
@@ -67,6 +80,13 @@ SELECT
     instructions::text AS instructions
 FROM demo_survey.survey_definition_page;
 
+comment on materialized view amp.survey_page is 'A survey page for an AMP survey';
+comment on column amp.survey_page.page_id is 'The unique identifier for a page in an AMP survey';
+comment on column amp.survey_page.survey_id is 'The unique identifier for an AMP survey';
+comment on column amp.survey_page.page_order is 'The presentation order of a page in an AMP survey';
+comment on column amp.survey_page.title is 'The label of a question an AMP survey';
+comment on column amp.survey_page.instructions is 'The instructions for responding to a question in an AMP survey';
+
 DROP FUNCTION IF EXISTS refresh_survey_page CASCADE;
 CREATE FUNCTION refresh_survey_page() RETURNS TRIGGER AS $body$
     BEGIN
@@ -94,6 +114,13 @@ SELECT
     substring(question_text, '<p>(.*)</p>') AS question_text,
     type::text as type
 FROM demo_survey.question;
+
+comment on materialized view amp.question is 'A question on an AMP survey';
+comment on column amp.question.question_id is 'The unique identifier for a question in an AMP survey';
+comment on column amp.question.page_id is 'The unique identifier for the page on which a question appeears in an AMP survey';
+comment on column amp.question.question_order is 'The presentation order of a question on a page in an AMP survey';
+comment on column amp.question.question_text is 'The presented description of a question an AMP survey';
+comment on column amp.question.type is 'The type of a question in an AMP survey';
 
 DROP FUNCTION IF EXISTS refresh_question CASCADE;
 CREATE FUNCTION refresh_question() RETURNS TRIGGER AS $body$
