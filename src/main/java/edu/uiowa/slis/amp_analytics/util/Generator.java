@@ -23,7 +23,7 @@ public class Generator {
 
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
 	PropertyConfigurator.configure("log4j.info");
-	props = PropertyLoader.loadProperties("cd2h");
+	props = PropertyLoader.loadProperties("amp");
 	conn = getConnection();
 
 	departments();
