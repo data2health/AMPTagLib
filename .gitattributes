@@ -11,6 +11,7 @@
 src/main/java/edu/uiowa/slis/amp_analytics/util/Generator.java -text
 src/main/resources/META-INF/taglib.tld -text svneol=unset#application/xml
 src/non-packaged-resources/Model.clay -text svneol=unset#application/xml
+src/non-packaged-resources/template.txt -text
 src/non-packaged-resources/views.sql -text
 src/test/java/edu/uiowa/slis/amp_analytics/README.txt -text
 src/test/resources/README.txt -text

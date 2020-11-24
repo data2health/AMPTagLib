@@ -1,5 +1,11 @@
 package edu.uiowa.slis.amp_analytics.util;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -7,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Hashtable;
 import java.util.Properties;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -20,8 +27,10 @@ public class Generator {
     
     static String sourceSchema = null;
     static Hashtable<String, Integer> idHash = new Hashtable<String, Integer>();
-
-    public static void main(String[] args) throws ClassNotFoundException, SQLException {
+    static Vector<String> questionIdentifiers = new Vector<String>();
+    static Hashtable<String, String> questionLabelHash = new Hashtable<String, String>();
+    
+    public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
 	PropertyConfigurator.configure("log4j.info");
 	props = PropertyLoader.loadProperties("amp");
 	conn = getConnection();
@@ -29,7 +38,7 @@ public class Generator {
 	departments();
     }
     
-    static void departments() throws SQLException {
+    static void departments() throws SQLException, IOException {
 	PreparedStatement stmt = conn.prepareStatement("select department_id,name,description from amp.department");
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
@@ -42,7 +51,7 @@ public class Generator {
 	stmt.close();
     }
 
-    static void surveys(int departmentID) throws SQLException {
+    static void surveys(int departmentID) throws SQLException, IOException {
 	PreparedStatement stmt = conn.prepareStatement("select survey_id,name,description,is_public,status,department_id from amp.survey where department_id = ?");
 	stmt.setInt(1, departmentID);
 	ResultSet rs = stmt.executeQuery();
@@ -59,7 +68,7 @@ public class Generator {
 	stmt.close();
     }
 
-    static void survey_pages(int surveyID) throws SQLException {
+    static void survey_pages(int surveyID) throws SQLException, IOException {
 	StringBuffer attributes = new StringBuffer("survey_id");
 	StringBuffer triggerAttributes = new StringBuffer("survey_id");
 	PreparedStatement stmt = conn.prepareStatement("select page_id,survey_id,page_order,title,instructions from amp.survey_page where survey_id = ? order by page_order");
@@ -78,6 +87,9 @@ public class Generator {
 	stmt.close();
 	materializeView("survey_data_" + surveyID, "survey_data_" + surveyID, attributes.toString(), triggerAttributes.toString());
 	idHash = new Hashtable<String, Integer>();
+	createDashboardPages("survey_data_" + surveyID);
+	questionIdentifiers = new Vector<String>();
+	questionLabelHash = new Hashtable<String, String>();
     }
 
     static void questions(int surveyID, int pageID, int pageOrder, StringBuffer attributes, StringBuffer triggerAttributes) throws SQLException {
@@ -91,33 +103,53 @@ public class Generator {
 	    String questionText = rs.getString(4).replace("\n ", "");
 	    String type = rs.getString(5);
 	    logger.info("\t\t\tquestion: " + questionID + " - " + questionOrder + " - " + questionText + " - " + type);
+	    String identifier = null;
+	    
 	    switch(type) {
 	    case "YES_NO_DROPDOWN":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
 		break;
 	    case "SHORT_TEXT_INPUT":
 	    case "LONG_TEXT_INPUT":
 	    case "HUGE_TEXT_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText, "", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
 		break;
 	    case "INTEGER_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
 		break;
 	    case "CURRENCY_INPUT":
 	    case "DECIMAL_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
 		break;
 	    case "DATE_INPUT":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
 		break;
 	    case "SINGLE_CHOICE_DROP_DOWN":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText, "", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
 		break;
 	    case "MULTIPLE_CHOICE_CHECKBOXES":
 		PreparedStatement subStmt = conn.prepareStatement("select option_order,option_text,option_value from amp.question_option where question_id = ? order by option_order");
@@ -128,22 +160,35 @@ public class Generator {
 		    String optionText = subrs.getString(2);
 		    String optionValue = subrs.getString(3);
 		    logger.info("\t\t\t\tcheckbox option: " + optionOrder + " - " + optionText + " - " + optionValue);
-		    attributes.append(", p" + pageOrder + "q" + questionOrder + "o" + optionOrder + " as " + identifier(questionText, " "+optionText, ""));
+		    identifier = identifier(questionText, ""+optionText, "");
+		    attributes.append(", p" + pageOrder + "q" + questionOrder + "o" + optionOrder + " as " + identifier);
 		    triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "o" + optionOrder);
+		    questionIdentifiers.add(identifier);
+		    questionLabelHash.put(identifier, questionText + " : " + optionText);
 		}
 		subStmt.close();
 		break;
 	    //case "SINGLE_CHOICE_DROP_DOWN": // DataSet Drop Down appears like this in the database
 	    case "SINGLE_CHOICE_RADIO_BUTTONS":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier(questionText, "", ""));
-		attributes.append(", p" + pageOrder + "q" + questionOrder + "text::text as " + identifier(questionText, " text", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "::text as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
+
+		identifier = identifier(questionText, " text", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + "text::text as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "text");
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText + " text");
 		break;
 	    case "STAR_RATING":
 	    case "SMILEY_FACES_RATING":
-		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier(questionText, "", ""));
+		identifier = identifier(questionText, "", "");
+		attributes.append(", p" + pageOrder + "q" + questionOrder + " as " + identifier);
 		triggerAttributes.append(", p" + pageOrder + "q" + questionOrder);
+		questionIdentifiers.add(identifier);
+		questionLabelHash.put(identifier, questionText);
 		break;
 	    case "YES_NO_DROPDOWN_MATRIX":
 	    case "INTEGER_INPUT_MATRIX":
@@ -164,8 +209,11 @@ public class Generator {
 			    int columnOrder = subsubrs.getInt(1);
 			    String columnLabel = subsubrs.getString(2);
 			    logger.info("\t\t\t\t\tmatrix column label: " + columnOrder + " - " + columnLabel);
-			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + " as " + identifier(questionText, rowLabel, columnLabel));
+			    identifier = identifier(questionText, rowLabel, columnLabel);
+			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + " as " + identifier);
 			    triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder);
+			    questionIdentifiers.add(identifier);
+			    questionLabelHash.put(identifier, questionText + " : " + rowLabel + " : " + columnLabel);
 			}
 			subSubStmt.close();
 		}
@@ -186,8 +234,11 @@ public class Generator {
 			    int columnOrder = subsubrs.getInt(1);
 			    String columnLabel = subsubrs.getString(2);
 			    logger.info("\t\t\t\t\tmatrix column label: " + columnOrder + " - " + columnLabel);
-			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + "::text as " + identifier(questionText, rowLabel, columnLabel));
+			    identifier = identifier(questionText, rowLabel, columnLabel);
+			    attributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder + "::text as " + identifier);
 			    triggerAttributes.append(", p" + pageOrder + "q" + questionOrder + "r" + rowOrder + "c" + columnOrder);
+			    questionIdentifiers.add(identifier);
+			    questionLabelHash.put(identifier, questionText + " : " + rowLabel + " : " + columnLabel);
 			}
 			subSubStmt.close();
 		}
@@ -229,6 +280,57 @@ public class Generator {
 		   +" OR TRUNCATE"
 		   +" ON " + sourceSchema + "." + sourceTable
 		   +" EXECUTE PROCEDURE refresh_" + sourceTable + "();");
+    }
+    
+    static void createDashboardPages(String viewName) throws IOException {
+	File feedFile = new File("/Users/eichmann/Documents/Components/workspace/AMP-dashboard/WebContent/dashboard/" + viewName + "_feed.jsp");
+	FileWriter fileWriter = new FileWriter(feedFile);
+	BufferedWriter writer = new BufferedWriter(fileWriter);
+
+	writer.write("<%@ taglib prefix=\"c\" uri=\"http://java.sun.com/jsp/jstl/core\"%>\n");
+	writer.write("<%@ taglib prefix=\"sql\" uri=\"http://java.sun.com/jsp/jstl/sql\"%>\n");
+	writer.write("\n");
+	writer.write("<sql:query var=\"responses\" dataSource=\"jdbc/AMP-dashboard\">\n");
+	writer.write("	select jsonb_pretty(jsonb_agg(data)) from amp." + viewName + " as data;\n");
+	writer.write("</sql:query>\n");
+	writer.write("{\n");
+	writer.write("	    \"headers\": [\n");
+	writer.write("	        {\"value\":\"survey_id\" \"label\":\"Survey ID\"}");
+	for (String questionIdentifier : questionIdentifiers) {
+	    writer.write(",\n	        {\"value\":\"" + questionIdentifier + "\", \"label\":\"" + questionLabelHash.get(questionIdentifier) + "\"}");
+	}
+	writer.write("\n	    ],\n");
+	writer.write("	    \"rows\" : \n");
+	writer.write("<c:forEach items=\"${responses.rows}\" var=\"row\" varStatus=\"rowCounter\">\n");
+	writer.write("		${row.jsonb_pretty}\n");
+	writer.write("</c:forEach>\n");
+	writer.write("}\n");
+
+	writer.close();
+	
+	File displayFile = new File("/Users/eichmann/Documents/Components/workspace/AMP-dashboard/WebContent/dashboard/" + viewName + ".jsp");
+	fileWriter = new FileWriter(displayFile);
+	writer = new BufferedWriter(fileWriter);
+	File displayTemplate = new File("/Users/eichmann/Documents/Components/workspace/AMPTagLib/src/non-packaged-resources/template.txt");
+	FileReader fileReader = new FileReader(displayTemplate);
+	BufferedReader reader = new BufferedReader(fileReader);
+	String buffer = null;
+	while ((buffer = reader.readLine()) != null) {
+	    if (buffer.startsWith("$")) {
+		writer.write(buffer.replace("feed", viewName + "_feed") + "\n");
+	    } else if (buffer.contains("columns:")) {
+		writer.write(buffer + "\n");
+		writer.write("\t\t\t{ data: 'survey_id', visible: true, orderable: true}");
+		for (String questionIdentifier : questionIdentifiers) {
+		    writer.write(",\n\t\t\t{ data: '" + questionIdentifier + "', visible: true, orderable: true}");
+		}
+		writer.write("\n");
+	    } else {
+		writer.write(buffer + "\n");
+	    }
+	}
+	writer.close();
+	reader.close();
     }
     
     static String identifier(String schemaName, String rowLabel, String columnName) {
