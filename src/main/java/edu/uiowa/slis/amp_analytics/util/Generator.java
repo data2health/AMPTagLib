@@ -29,6 +29,8 @@ public class Generator {
     static Hashtable<String, Integer> idHash = new Hashtable<String, Integer>();
     static Vector<String> questionIdentifiers = new Vector<String>();
     static Hashtable<String, String> questionLabelHash = new Hashtable<String, String>();
+    static String surveyName = null;
+    static String surveyDescription = null;
     
     public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
 	PropertyConfigurator.configure("log4j.info");
@@ -57,8 +59,8 @@ public class Generator {
 	ResultSet rs = stmt.executeQuery();
 	while (rs.next()) {
 	    int surveyID = rs.getInt(1);
-	    String surveyName = rs.getString(2);
-	    String surveyDescription = rs.getString(3);
+	    surveyName = rs.getString(2);
+	    surveyDescription = rs.getString(3);
 	    boolean isPublic = rs.getBoolean(4);
 	    String surveyStatus = rs.getString(5);
 	    //int surveyDepartmentID = rs.getInt(6);
@@ -295,7 +297,7 @@ public class Generator {
 	writer.write("</sql:query>\n");
 	writer.write("{\n");
 	writer.write("	    \"headers\": [\n");
-	writer.write("	        {\"value\":\"survey_id\" \"label\":\"Survey ID\"}");
+	writer.write("	        {\"value\":\"survey_id\", \"label\":\"Survey ID\"}");
 	for (String questionIdentifier : questionIdentifiers) {
 	    writer.write(",\n	        {\"value\":\"" + questionIdentifier + "\", \"label\":\"" + questionLabelHash.get(questionIdentifier) + "\"}");
 	}
@@ -316,18 +318,20 @@ public class Generator {
 	BufferedReader reader = new BufferedReader(fileReader);
 	String buffer = null;
 	while ((buffer = reader.readLine()) != null) {
-	    if (buffer.startsWith("$")) {
-		writer.write(buffer.replace("feed", viewName + "_feed") + "\n");
-	    } else if (buffer.contains("columns:")) {
-		writer.write(buffer + "\n");
-		writer.write("\t\t\t{ data: 'survey_id', visible: true, orderable: true}");
-		for (String questionIdentifier : questionIdentifiers) {
-		    writer.write(",\n\t\t\t{ data: '" + questionIdentifier + "', visible: true, orderable: true}");
+		if (buffer.startsWith("$")) {
+			writer.write(buffer.replace("feed", viewName + "_feed") + "\n");
+		} else if (buffer.contains("columns:")) {
+			writer.write(buffer + "\n");
+			writer.write("\t\t\t{ data: 'survey_id', visible: true, orderable: true}");
+			for (String questionIdentifier : questionIdentifiers) {
+				writer.write(",\n\t\t\t{ data: '" + questionIdentifier + "', visible: true, orderable: true}");
+			}
+			writer.write("\n");
+		} else if (buffer.contains("AMP Dashboard")) {
+			writer.write(buffer.replace("AMP Dashboard", "AMP " + surveyName + " Dashboard") + "\n");
+		} else {
+			writer.write(buffer + "\n");
 		}
-		writer.write("\n");
-	    } else {
-		writer.write(buffer + "\n");
-	    }
 	}
 	writer.close();
 	reader.close();
