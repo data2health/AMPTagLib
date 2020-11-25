@@ -327,8 +327,15 @@ public class Generator {
 				writer.write(",\n\t\t\t{ data: '" + questionIdentifier + "', visible: true, orderable: true}");
 			}
 			writer.write("\n");
+		} else if (buffer.contains("(none)")) {
+			writer.write(buffer + "\n");
+			for (String questionIdentifier : questionIdentifiers) {
+				writer.write("\t\t\t<option value=\"" + questionIdentifier + "\">" + questionLabelHash.get(questionIdentifier) + "</option>\n");
+			}
 		} else if (buffer.contains("AMP Dashboard")) {
 			writer.write(buffer.replace("AMP Dashboard", "AMP " + surveyName + " Dashboard") + "\n");
+		} else if (buffer.contains("survey_data_seq")) {
+			writer.write(buffer.replace("survey_data_seq", viewName) + "\n");
 		} else {
 			writer.write(buffer + "\n");
 		}
