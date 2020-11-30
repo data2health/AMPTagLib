@@ -15,8 +15,9 @@
 	<jsp:include page="../navbar.jsp" flush="true" />
 	
 	<div class="container-fluid m-5 shadow-border">
-    	<h2 class="header-text"><img src="<util:applicationRoot/>/images/n3c_logo.png" class="n3c_logo_header" alt="N3C Logo">AMP Dashboard</h2>
-    	<div style="text-align:center;">
+     	<div style="text-align:center;">
+    	<img src="<util:applicationRoot/>/images/dashboard_logo.png" height="60px" alt="N3C Logo">
+    	<h2 class="header-text">AMP Dashboard</h2>
  			
 <p>&nbsp;</p>
 <div id="table" style="overflow: scroll;">&nbsp;</div>
@@ -92,7 +93,7 @@ $.getJSON("feed.jsp", function(data){
 
 
 
-			<c:if test="${not empty param.target and param.displayMode == 'bar'}">
+			<c:if test="${not empty param.displayMode and param.displayMode == 'bar'}">
 				<jsp:include page="../graphs/verticalBarChart.jsp">
 					<jsp:param name="data_page"	value="columnFreqData.jsp?column=${param.target}&survey=survey_data_seq" />
 					<jsp:param name="dom_element" value="#graph" />

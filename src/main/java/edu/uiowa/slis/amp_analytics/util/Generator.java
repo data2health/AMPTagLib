@@ -333,7 +333,7 @@ public class Generator {
 				writer.write("\t\t\t<option value=\"" + questionIdentifier + "\">" + questionLabelHash.get(questionIdentifier) + "</option>\n");
 			}
 		} else if (buffer.contains("AMP Dashboard")) {
-			writer.write(buffer.replace("AMP Dashboard", "AMP " + surveyName + " Dashboard") + "\n");
+			writer.write(buffer.replace("AMP Dashboard", surveyName) + "\n");
 		} else if (buffer.contains("survey_data_seq")) {
 			writer.write(buffer.replace("survey_data_seq", viewName) + "\n");
 		} else {
